@@ -62,12 +62,14 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
         description: photo.description,
         url: imageUrl,
       });
-
       return response.data;
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('users');
+        queryClient.invalidateQueries('images', {
+          refetchInactive: false,
+          refetchActive: true,
+        });
       },
     }
   );
@@ -106,6 +108,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
       reset();
       setLocalImageUrl('');
       setImageUrl('');
+      closeModal();
     }
   };
 

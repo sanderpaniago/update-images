@@ -9,8 +9,9 @@ import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
 export default function Home(): JSX.Element {
-  async function getImages({ pageParam = 0 }): Promise<any> {
-    const response = await api.get(`/api/images?after=${pageParam}`);
+  async function getImages({ pageParam = null }): Promise<any> {
+    const query = pageParam ? `/api/images?after=${pageParam}` : '/api/images';
+    const response = await api.get(query);
     return response.data;
   }
   const {
@@ -21,20 +22,16 @@ export default function Home(): JSX.Element {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery('images', getImages, {
-    getNextPageParam: (lastPage, page) => {
-      if (lastPage.after) {
-        console.log('last', lastPage);
-      }
-    },
+    getNextPageParam: (lastPage, page) => lastPage.after || null,
   });
 
   const formattedData = useMemo(() => {
-    console.log('data', data);
     const pages = data?.pages.flat();
-    console.log('pageFlat', pages);
-    const images = pages.map(page => {
-      return page;
-    });
+    const images = pages
+      ?.map(page => {
+        return page.data;
+      })
+      .flat();
     return images;
   }, [data]);
 
@@ -45,13 +42,18 @@ export default function Home(): JSX.Element {
   if (isError) {
     return <Error />;
   }
+
   return (
     <>
       <Header />
 
       <Box maxW={1120} px={20} mx="auto" my={20}>
         <CardList cards={formattedData} />
-        {/* TODO RENDER LOAD MORE BUTTON IF DATA HAS NEXT PAGE */}
+        {hasNextPage && (
+          <Button type="button" onClick={() => fetchNextPage()} mt={14}>
+            {isFetchingNextPage ? 'Carregando...' : 'Carregar mais'}
+          </Button>
+        )}
       </Box>
     </>
   );
