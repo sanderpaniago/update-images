@@ -10,6 +10,11 @@ import { TextInput } from '../Input/TextInput';
 interface FormAddImageProps {
   closeModal: () => void;
 }
+type ImageProps = {
+  title: string | unknown;
+  description: string | unknown;
+  url: string;
+};
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const [imageUrl, setImageUrl] = useState('');
@@ -56,14 +61,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
-    async (photo: Record<string, unknown>) => {
-      const response = await api.post('/api/images', {
-        title: photo.title,
-        description: photo.description,
-        url: imageUrl,
-      });
-      return response.data;
-    },
+    (image: ImageProps) => api.post('/api/images', image),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('images', {
@@ -78,10 +76,16 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
     useForm();
   const { errors } = formState;
 
-  const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
+  const onSubmit = async (data: ImageProps): Promise<void> => {
     try {
+      const image = {
+        title: data.title,
+        description: data.description,
+        url: imageUrl,
+      };
+
       if (imageUrl) {
-        await mutation.mutateAsync(data);
+        await mutation.mutateAsync(image);
         toast({
           position: 'top-right',
           title: 'Imagem cadastrada',
@@ -96,6 +100,8 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
             'É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro.',
           status: 'error',
         });
+
+        return;
       }
     } catch {
       toast({
@@ -106,8 +112,6 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
       });
     } finally {
       reset();
-      setLocalImageUrl('');
-      setImageUrl('');
       closeModal();
     }
   };
